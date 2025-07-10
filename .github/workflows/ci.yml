@@ -32,8 +32,8 @@ jobs:
         Rename-Item -Path ".\RoundedTB\bin\Release" -NewName "RoundedTB-$(git rev-parse --short ${{ github.sha }})"
         
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: rtb-artifacts
+        name: rtb-artifacts-${{ github.run_id }}
         path: |
           .\RoundedTB\bin\RoundedTB-*\
