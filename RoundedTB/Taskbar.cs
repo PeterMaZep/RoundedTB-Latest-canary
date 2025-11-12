@@ -262,16 +262,17 @@ namespace RoundedTB
                 {
                     int appListLeft = taskbar.AppListRect.Left - taskbar.TaskbarRect.Left;
                     int appListRight = taskbar.AppListRect.Right - taskbar.TaskbarRect.Left;
-                
-                    int left = appListLeft - Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor);
-                    int right = appListRight + Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor);
-                    int taskbarWidth = taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left;
-                    left = Math.Max(0, left);
+                    
+                    int leftMargin = Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor);
+                    int rightMargin = Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor);
+                    
+                    int left = Math.Max(0, appListLeft - leftMargin);
                     int right = Math.Min(taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left, appListRight + rightMargin);
+                    
                     int top = centredEffectiveRegion.Top;
                     int bottom = top + centredEffectiveRegion.Height;
                     int radius = centredEffectiveRegion.CornerRadius;
-                
+                    
                     mainRegion = LocalPInvoke.CreateRoundRectRgn(
                         left,
                         top,
