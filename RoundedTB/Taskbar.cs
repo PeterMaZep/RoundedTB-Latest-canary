@@ -260,16 +260,24 @@ namespace RoundedTB
                 // Create region for if the taskbar is centred by take the right-to-right distance (centredDistanceFromEdge) off from both sides, as well as the margin
                 if (settings.IsCentred)
                 {
+                    int appListLeft = taskbar.AppListRect.Left - taskbar.TaskbarRect.Left;
+                    int appListRight = taskbar.AppListRect.Right - taskbar.TaskbarRect.Left;
+                
+                    int left = appListLeft - Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor);
+                    int right = appListRight + Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor);
+                    int top = centredEffectiveRegion.Top;
+                    int bottom = top + centredEffectiveRegion.Height;
+                    int radius = centredEffectiveRegion.CornerRadius;
+                
                     mainRegion = LocalPInvoke.CreateRoundRectRgn(
-                        centredDistanceFromEdge + centredEffectiveRegion.Left,
-                        centredEffectiveRegion.Top,
-                        centredEffectiveRegion.Width - centredDistanceFromEdge,
-                        centredEffectiveRegion.Height,
-                        centredEffectiveRegion.CornerRadius,
-                        centredEffectiveRegion.CornerRadius
-                        );
+                        left,
+                        top,
+                        right,
+                        bottom,
+                        radius,
+                        radius
+                    );
                 }
-
                 // Create a region for if the taskbar is left-aligned, right-to-right distance (centredDistanceFromEdge) off from the right-hand side, as well as the margin
                 else
                 {
