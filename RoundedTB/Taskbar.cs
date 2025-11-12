@@ -220,9 +220,14 @@ namespace RoundedTB
                 {
                     CornerRadius = Convert.ToInt32(settings.DynamicAppListLayout.CornerRadius * taskbar.ScaleFactor),
                     Top = Convert.ToInt32(settings.DynamicAppListLayout.MarginTop * taskbar.ScaleFactor),
-                    Left = Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor) - 1,
-                    Width = Convert.ToInt32(taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left - (settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor)) + 1,
-                    Height = Convert.ToInt32(taskbar.TaskbarRect.Bottom - taskbar.TaskbarRect.Top - (settings.DynamicAppListLayout.MarginBottom * taskbar.ScaleFactor)) + 1
+                    Left = Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor),
+                    Width = Convert.ToInt32(
+                        taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left
+                        - (settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor)
+                        - (settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor)
+                    ),
+                    Height = Convert.ToInt32(taskbar.TaskbarRect.Bottom - taskbar.TaskbarRect.Top
+                        - (settings.DynamicAppListLayout.MarginBottom * taskbar.ScaleFactor))
                 };
 
                 // Create an effective region to be applied to the taskbar for the tray
