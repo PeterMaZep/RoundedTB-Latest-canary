@@ -265,6 +265,9 @@ namespace RoundedTB
                 
                     int left = appListLeft - Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor);
                     int right = appListRight + Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor);
+                    int taskbarWidth = taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left;
+                    left = Math.Max(0, left);
+                    right = Math.Min(taskbarWidth, right);
                     int top = centredEffectiveRegion.Top;
                     int bottom = top + centredEffectiveRegion.Height;
                     int radius = centredEffectiveRegion.CornerRadius;
