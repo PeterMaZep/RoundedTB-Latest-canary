@@ -5,8 +5,18 @@
 
 ![image](https://user-images.githubusercontent.com/31840547/134795141-76349eaf-12da-40f8-b2a0-d7b7c268d152.png)
 
+## Current status
+We are examining RTB's code to try and fix it. We will gladly take any pull requests. 
 
-## How do I get it?
+## Roadmap
+### Now
+We are examining RTB's code to try and fix it. Any pull requests will be gladly reviewed by us.
+
+### The future
+We will then try and fix some basic features. 
+
+## How do I get it? 
+Currently, this fix of rounded tb is in progress. 
 The easiest way to download RoundedTB is from the [Microsoft Store](https://www.microsoft.com/store/productId/9MTFTXSJ9M7F). You can also download the latest version from the Releases tab, unzip it and run `RoundedTB.exe`. If you're a madman, you can compile it yourself or check out the latest [Canary build](https://nightly.link/torchgm/RoundedTB/workflows/ci/master/rtb-artifacts.zip) (note these can be very unfinished, buggy and unstable).
 
 ## To use
