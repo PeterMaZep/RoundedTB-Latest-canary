@@ -55,6 +55,9 @@
     <PackageReference Include="PInvoke.User32">
       <Version>0.7.104</Version>
     </PackageReference>
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="WPF-UI">
       <Version>1.2.1</Version>
@@ -67,17 +70,7 @@
   <ItemGroup>
     <Resource Include="RoundedTB.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="res\TrayDark.ico" />
     <Resource Include="res\TrayLight.ico" />

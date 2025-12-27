@@ -30,7 +30,7 @@
             <StackPanel Width="473">
                 <Expander x:Name="expander0" HorizontalAlignment="Center" Header="What's new" VerticalAlignment="Top" Width="480" FontSize="16" FontFamily="Segoe UI Semibold">
                     <Grid>
-                        <TextBlock Margin="0,5,0,0" x:Name="bodyBlock0" TextWrapping="Wrap" FontWeight="Normal" FontFamily="Segoe UI" FontSize="14" Opacity="0.8" LineHeight="23">            
+                        <TextBlock Margin="0,5,0,0" x:Name="bodyBlock0" TextWrapping="Wrap" FontWeight="Normal" FontFamily="Segoe UI" FontSize="14" Opacity="0.8" LineHeight="23">
                     • Nobody knows. Some say secrets lie amongst these builds. And bugs. Honestly, I'm pretty sure they're 90% bug. 95%. 98%. Actually the fact you're even seeing this text is probably a bug. idk tbh, i give up
                     <LineBreak/>
                     <Bold>REMINDER: Autohide is currently rather buggy and must be entirely disabled in Windows.</Bold>
@@ -93,7 +93,7 @@
                 <Expander x:Name="expander4" HorizontalAlignment="Center" Header="Help and information" VerticalAlignment="Top" Width="480" FontSize="16" FontFamily="Segoe UI Semibold">
                     <Grid>
                         <TextBlock Margin="0,5,0,0" x:Name="bodyBlock4" TextWrapping="Wrap" FontWeight="Normal" FontFamily="Segoe UI" FontSize="14" Opacity="0.8" LineHeight="21">
-                    • More in-depth instructions, tips and tricks are available in the 
+                    • More in-depth instructions, tips and tricks are available in the
                     <Hyperlink NavigateUri="https://github.com/torchgm/RoundedTB#readme" RequestNavigate="Hyperlink_RequestNavigate">
                         README
                     </Hyperlink>.
@@ -109,7 +109,7 @@
                     </Hyperlink>.
                     <LineBreak/>
                     <LineBreak/>
-                    RoundedTB is licensed under the 
+                    RoundedTB is licensed under the
                     <Hyperlink NavigateUri="https://github.com/torchgm/RoundedTB/blob/master/LICENSE" RequestNavigate="Hyperlink_RequestNavigate">
                         GNU General Public License v3.0
                     </Hyperlink>. By using the software, you agree to accepting the terms of this license.
