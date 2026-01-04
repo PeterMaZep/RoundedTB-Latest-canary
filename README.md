@@ -8,7 +8,7 @@
 
 ## Current status
 
-We are examining RTB's code to try and fix it. We will gladly take any pull requests.
+We are examining RTB's code to try and fix it. We will gladly take any pull requests. This is a community effort, so RoundedTB might never become RoundedTB without YOU!
 
 ## Roadmap
 
