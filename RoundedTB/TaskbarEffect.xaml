@@ -12,7 +12,7 @@
     <Grid>
 
         <!--MouseMove="HandleMouseMove"-->
-        <Canvas 
+        <Canvas
             Background="Transparent">
             <Ellipse x:Name="eye"
              Width="73"

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,19 +12,45 @@ namespace RoundedTB
 {
     public class Interaction
     {
-        public MainWindow mw;
+        private MainWindow _mw;
+        public MainWindow mw
+        {
+            get
+            {
+                if (_mw == null)
+                {
+                    // Try to get the MainWindow when first accessed
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    if (mainWindow != null)
+                    {
+                        _mw = mainWindow;
+                    }
+                    else
+                    {
+                        // If MainWindow is null, search for the MainWindow among all windows
+                        foreach (Window window in Application.Current.Windows)
+                        {
+                            if (window is MainWindow mainWnd)
+                            {
+                                _mw = mainWnd;
+                                break;
+                            }
+                        }
+                    }
+                }
+                return _mw;
+            }
+        }
         string m = "";
 
         public Interaction()
         {
-            try
-            {
-                mw = (MainWindow)Application.Current.MainWindow;
-            }
-            catch (Exception)
-            {
-                // No idea why this was necessary but it was so it's here now. Yay. TODO - work out why this is suddenly broken and unbreak it
-            }
+            // Reference lookup is now deferred until mw property is accessed
+        }
+
+        public void SetMainWindow(MainWindow mainWindow)
+        {
+            _mw = mainWindow;
         }
 
         public Types.Settings ReadJSON()
@@ -95,7 +121,7 @@ namespace RoundedTB
                         AutoHide = 0
                     };
                 }
-                
+
                 WriteJSON(); // butts - Missy Quarry, 2020
             }
             if (File.ReadAllText(mw.configPath) == "" || File.ReadAllText(mw.configPath) == null)
@@ -141,7 +167,7 @@ namespace RoundedTB
         {
             return LocalPInvoke.SendMessage(LocalPInvoke.FindWindow("TTB_WorkerWindow", "TTB_WorkerWindow"), LocalPInvoke.RegisterWindowMessage("TTB_ForceRefreshTaskbar"), 0, taskbarHwnd);
         }
-        
+
         // Attempt to forcefully refresh the taskbar
         public static void UpdateLegacyTB(IntPtr taskbarHwnd)
         {

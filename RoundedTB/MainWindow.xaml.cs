@@ -1,5 +1,5 @@
-﻿using IWshRuntimeLibrary;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -18,26 +18,33 @@ using System.Text;
 using WPFUI;
 using System.Windows.Forms;
 using System.Windows.Media;
+using DrawingIcon = System.Drawing.Icon;
+using Hardcodet.Wpf.TaskbarNotification;
 
 namespace RoundedTB
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
-    /// 
+    ///
     /// Many thanks to
     ///  - FloatingMilkshake
     ///  - cardin
     ///  - cleverActon0126
     ///  for your gracious donations! 💖
-    ///  
+    ///
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const string StartupShortcutName = "RoundedTB.lnk";
+        private const string StartupRunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        private const string StartupRunValueName = "RoundedTB";
+
         public bool isWindows11;
         public List<Types.Taskbar> taskbarDetails = new List<Types.Taskbar>();
         public bool shouldReallyDieNoReally = false;
         public string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "rtb.json");
         public string logPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "rtb.log");
+        private TaskbarIcon _trayIcon;
         public Types.Settings activeSettings = new Types.Settings();
         public BackgroundWorker taskbarThread = new BackgroundWorker();
         public IntPtr hwndDesktopButton = IntPtr.Zero;
@@ -85,34 +92,14 @@ namespace RoundedTB
             background = new Background();
             interaction = new Interaction();
 
-            // Check if RoundedTB is already running, and if it is, do nothing.
-            Process[] matchingProcesses = Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName);
-            
-            if (matchingProcesses.Length > 1)
-            {
-                List<IntPtr> windowList = Interaction.GetTopLevelWindows();
-                foreach (IntPtr hwnd in windowList)
-                {
-                    StringBuilder windowClass = new StringBuilder(1024);
-                    StringBuilder windowTitle = new StringBuilder(1024);
-                    try
-                    {
-                        LocalPInvoke.GetClassName(hwnd, windowClass, 1024);
-                        LocalPInvoke.GetWindowText(hwnd, windowTitle, 1024);
+            // Set the MainWindow reference directly to avoid lazy initialization issues
+            background.SetMainWindow(this);
+            interaction.SetMainWindow(this);
 
-                        if (windowClass.ToString().Contains("HwndWrapper[RoundedTB.exe") && windowTitle.ToString() == "RoundedTB")
-                        {
-                            LocalPInvoke.SetWindowText(hwnd, "RoundedTB_SettingsRequest");
-                        }
-                    }
-                    catch (Exception) { }
-                }
-                shouldReallyDieNoReally = true;
-                isAlreadyRunning = true;
-                Close();
-                return;
-            }
+            // Note: Single instance detection is now handled in App.xaml.cs using Mutex
+            // This old process detection logic has been removed to avoid conflicts
             TrayIconCheck();
+            SetupTrayIcon();
 
             if (IsRunningAsUWP())
             {
@@ -122,10 +109,13 @@ namespace RoundedTB
                 logPath = Path.Combine(Windows.Storage.ApplicationData.Current.RoamingFolder.Path, "rtb.log");
             }
 
-            if (System.IO.File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "RoundedTB.lnk")) && !IsRunningAsUWP())
+            if (!IsRunningAsUWP())
             {
-                StartupCheckBox.IsChecked = true;
-                ShowMenuItem.Header = "Show RoundedTB";
+                RefreshStartupCheckboxFromSystem();
+                if (StartupCheckBox.IsChecked == true)
+                {
+                    ShowMenuItem.Header = "Show RoundedTB";
+                }
             }
             taskbarThread.WorkerSupportsCancellation = true;
             taskbarThread.WorkerReportsProgress = true;
@@ -154,7 +144,7 @@ namespace RoundedTB
             // Default settings
             if (activeSettings == null)
             {
-                
+
                 if (isWindows11) // Default settings for Windows 11
                 {
                     activeSettings = new Types.Settings()
@@ -425,7 +415,7 @@ namespace RoundedTB
 
         public void TrayIconCheck()
         {
-            
+
             Uri resLight = new("pack://application:,,,/res/traylight.ico");
             Uri resDark = new("pack://application:,,,/res/traydark.ico");
             WPFUI.Theme.Style style = WPFUI.Theme.Manager.GetSystemTheme();
@@ -522,66 +512,76 @@ namespace RoundedTB
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            base.OnClosing(e);
+            Log.Information($"MainWindow.OnClosing called. shouldReallyDieNoReally: {shouldReallyDieNoReally}");
 
             if (shouldReallyDieNoReally == false)
             {
+                Log.Information("Cancelling window close, hiding window instead");
                 e.Cancel = true;
                 Visibility = Visibility.Hidden;
                 ShowMenuItem.Header = "Show RoundedTB";
+                return;
             }
-            else
+
+            Log.Information("Allowing window close - application will exit");
+
+            try
             {
-
-
-                try
-                {
-                    taskbarThread.CancelAsync();
-                }
-                catch (Exception aaaa)
-                {
-                    interaction.AddLog(aaaa.Message);
-                }
-                while (taskbarThread.IsBusy == true)
-                {
-                    System.Windows.Forms.Application.DoEvents();
-                    System.Threading.Thread.Sleep(100);
-                }
-
-                try
-                {
-                    foreach (var tbDeets in taskbarDetails)
-                    {
-                        Taskbar.ResetTaskbar(tbDeets, activeSettings);
-                    }
-                    if (activeSettings.AutoHide > 0)
-                    {
-                        AutoHide(false, taskbarDetails);
-                    }
-                }
-                catch (InvalidOperationException aaaa)
-                {
-                    interaction.AddLog($"Taskbar structure changed on exit:\n{aaaa.Message}");
-                }
-                interaction.AddLog("Exiting RoundedTB.");
+                taskbarThread.CancelAsync();
             }
+            catch (Exception aaaa)
+            {
+                interaction.AddLog(aaaa.Message);
+            }
+            while (taskbarThread.IsBusy == true)
+            {
+                System.Windows.Forms.Application.DoEvents();
+                System.Threading.Thread.Sleep(100);
+            }
+
+            try
+            {
+                foreach (var tbDeets in taskbarDetails)
+                {
+                    Taskbar.ResetTaskbar(tbDeets, activeSettings);
+                }
+                if (activeSettings.AutoHide > 0)
+                {
+                    AutoHide(false, taskbarDetails);
+                }
+            }
+            catch (InvalidOperationException aaaa)
+            {
+                interaction.AddLog($"Taskbar structure changed on exit:\n{aaaa.Message}");
+            }
+            interaction.AddLog("Exiting RoundedTB.");
+
             if (!isAlreadyRunning)
             {
                 interaction.WriteJSON();
             }
+
+            DisposeTrayIcon();
+            base.OnClosing(e);
         }
 
         private void CloseMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Close any popups - leave main window for now
+            // Close any popup windows, but not the main window
             for (int windowCount = App.Current.Windows.Count - 1; windowCount >= 0; windowCount--)
             {
-                App.Current.Windows[windowCount].Close();
+                var window = App.Current.Windows[windowCount];
+                // Don't close the main window (this window)
+                if (window != this)
+                {
+                    window.Close();
+                }
             }
-            
+
             shouldReallyDieNoReally = true;
 
-            Close();
+            // Use the App's shutdown method to ensure proper termination
+            ((App)System.Windows.Application.Current).Shutdown();
         }
 
         public void ShowMenuItem_Click(object sender, RoutedEventArgs e)
@@ -593,13 +593,92 @@ namespace RoundedTB
             }
             else
             {
-                // Close any popups - leave main window for now
+                // Close any popup windows, but not the main window
                 for (int windowCount = App.Current.Windows.Count - 1; windowCount >= 0; windowCount--)
                 {
-                    App.Current.Windows[windowCount].Close();
+                    var window = App.Current.Windows[windowCount];
+                    // Don't close the main window (this window)
+                    if (window != this)
+                    {
+                        window.Close();
+                    }
                 }
                 Visibility = Visibility.Hidden;
                 ShowMenuItem.Header = "Show RoundedTB";
+            }
+        }
+
+        private void SetupTrayIcon()
+        {
+            if (_trayIcon != null)
+            {
+                return;
+            }
+
+            _trayIcon = new TaskbarIcon
+            {
+                Icon = LoadTrayIcon(),
+                ToolTipText = "RoundedTB",
+                ContextMenu = TrayContextMenu,
+                Visibility = Visibility.Visible
+            };
+
+            _trayIcon.TrayLeftMouseUp += TrayIcon_OnLeftClick;
+        }
+
+        private void TrayIcon_OnLeftClick(object sender, RoutedEventArgs e)
+        {
+            if (IsVisible)
+            {
+                Visibility = Visibility.Hidden;
+                ShowMenuItem.Header = "Show RoundedTB";
+            }
+            else
+            {
+                Visibility = Visibility.Visible;
+                ShowMenuItem.Header = "Hide RoundedTB";
+                Activate();
+            }
+        }
+
+        private DrawingIcon LoadTrayIcon()
+        {
+            try
+            {
+                var streamInfo = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/RoundedTBCanary.ico"));
+                if (streamInfo != null)
+                {
+                    return new DrawingIcon(streamInfo.Stream);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to load tray icon from resources, falling back to executable icon");
+            }
+
+            try
+            {
+                var exeIcon = DrawingIcon.ExtractAssociatedIcon(System.Windows.Application.ResourceAssembly.Location);
+                if (exeIcon != null)
+                {
+                    return exeIcon;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed to load tray icon from executable");
+            }
+
+            return System.Drawing.SystemIcons.Application;
+        }
+
+        private void DisposeTrayIcon()
+        {
+            if (_trayIcon != null)
+            {
+                _trayIcon.TrayLeftMouseUp -= TrayIcon_OnLeftClick;
+                _trayIcon.Dispose();
+                _trayIcon = null;
             }
         }
 
@@ -613,37 +692,10 @@ namespace RoundedTB
             }
             else
             {
-                if (System.IO.File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "RoundedTB.lnk")))
-                {
-                    System.IO.File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Startup), "RoundedTB.lnk"));
-                }
-                else
-                {
-                    EnableStartup();
-                }
-            }
-        }
-
-        public void EnableStartup()
-        {
-            try
-            {
-                string shortcutFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-                if (!Directory.Exists(shortcutFolder))
-                {
-                    Directory.CreateDirectory(shortcutFolder);
-                }
-                WshShell shellClass = new WshShell();
-                string rtbStartupLink = Path.Combine(shortcutFolder, "RoundedTB.lnk");
-                IWshShortcut shortcut = (IWshShortcut)shellClass.CreateShortcut(rtbStartupLink);
-                shortcut.TargetPath = Environment.GetCommandLineArgs()[0];
-                shortcut.IconLocation = Environment.GetCommandLineArgs()[0];
-                shortcut.Arguments = "";
-                shortcut.Description = "Start RoundedTB";
-                shortcut.Save();
-            }
-            catch (Exception)
-            {
+                // When Click event fires, checkbox has already toggled to the new state.
+                // Use the new state directly (don't invert it).
+                var enableStartup = StartupCheckBox.IsChecked == true;
+                SetStartupEnabled(enableStartup);
             }
         }
 
@@ -674,6 +726,107 @@ namespace RoundedTB
                     StartupCheckBox.IsEnabled = true;
                     break;
             }
+        }
+
+        private void SetStartupEnabled(bool enable)
+        {
+            try
+            {
+                if (enable)
+                {
+                    CreateStartupShortcut();
+                    SetRunRegistryValue();
+                }
+                else
+                {
+                    RemoveStartupShortcut();
+                    RemoveRunRegistryValue();
+                }
+            }
+            catch (Exception ex)
+            {
+                interaction.AddLog($"Failed to update startup registration: {ex.Message}");
+            }
+            finally
+            {
+                RefreshStartupCheckboxFromSystem();
+            }
+        }
+
+        private void RefreshStartupCheckboxFromSystem()
+        {
+            try
+            {
+                bool shortcutExists = File.Exists(GetStartupShortcutPath());
+                bool registryEnabled = false;
+
+                using (var key = Registry.CurrentUser.OpenSubKey(StartupRunRegistryPath, false))
+                {
+                    var value = key?.GetValue(StartupRunValueName) as string;
+                    registryEnabled = !string.IsNullOrWhiteSpace(value);
+                }
+
+                StartupCheckBox.IsChecked = shortcutExists || registryEnabled;
+                StartupCheckBox.Content = "Run at startup";
+                StartupCheckBox.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                interaction.AddLog($"Failed to read startup registration: {ex.Message}");
+            }
+        }
+
+        private void CreateStartupShortcut()
+        {
+            string shortcutPath = GetStartupShortcutPath();
+            string shortcutFolder = Path.GetDirectoryName(shortcutPath)!;
+            if (!Directory.Exists(shortcutFolder))
+            {
+                Directory.CreateDirectory(shortcutFolder);
+            }
+
+            // Use dynamic to avoid compile-time COM dependency
+            Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+            dynamic shellClass = Activator.CreateInstance(shellType);
+
+            dynamic shortcut = shellClass.CreateShortcut(shortcutPath);
+            string exePath = Environment.ProcessPath ?? System.Windows.Application.ResourceAssembly.Location;
+
+            shortcut.TargetPath = exePath;
+            shortcut.IconLocation = exePath;
+            shortcut.Arguments = "";
+            shortcut.Description = "Start RoundedTB";
+            shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
+            shortcut.Save();
+        }
+
+        private void RemoveStartupShortcut()
+        {
+            string shortcutPath = GetStartupShortcutPath();
+            if (File.Exists(shortcutPath))
+            {
+                File.Delete(shortcutPath);
+            }
+        }
+
+        private string GetStartupShortcutPath()
+        {
+            string shortcutFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            return Path.Combine(shortcutFolder, StartupShortcutName);
+        }
+
+        private void SetRunRegistryValue()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(StartupRunRegistryPath, writable: true) ??
+                            Registry.CurrentUser.CreateSubKey(StartupRunRegistryPath);
+            string exePath = Environment.ProcessPath ?? System.Windows.Application.ResourceAssembly.Location;
+            key.SetValue(StartupRunValueName, $"\"{exePath}\"");
+        }
+
+        private void RemoveRunRegistryValue()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(StartupRunRegistryPath, writable: true);
+            key?.DeleteValue(StartupRunValueName, false);
         }
 
         async Task StartupInit(bool clean)
@@ -758,7 +911,7 @@ namespace RoundedTB
             IntPtr hwndNext = LocalPInvoke.FindWindowExA(taskbarDetails[0].TaskbarHwnd, IntPtr.Zero, "Start", null);
             List<IntPtr> floatingMilkshakesBitsOfTaskbar = new List<IntPtr>();
             floatingMilkshakesBitsOfTaskbar.Add(hwndNext);
-            while (true) 
+            while (true)
             {
                 hwndNext = LocalPInvoke.FindWindowExA(taskbarDetails[0].TaskbarHwnd, hwndNext, null, null);
                 if (floatingMilkshakesBitsOfTaskbar.Contains(hwndNext))
@@ -790,7 +943,7 @@ namespace RoundedTB
             showSegmentsOnHoverCheckBox.IsChecked = false;
             showTrayCheckBox.IsEnabled = true;
             showTrayCheckBox.IsChecked = true;
-            
+
             if (!isWindows11)
             {
                 splitHelpButton.Visibility = Visibility.Visible;
@@ -811,7 +964,7 @@ namespace RoundedTB
             showSegmentsOnHoverCheckBox.IsChecked = false;
             showTrayCheckBox.IsEnabled = false;
             showTrayCheckBox.IsChecked = false;
-            
+
             if (!isWindows11)
             {
                 splitHelpButton.Visibility = Visibility.Hidden;

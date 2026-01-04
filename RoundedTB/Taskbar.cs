@@ -251,6 +251,9 @@ namespace RoundedTB
 
                 centredDistanceFromEdge = taskbar.TaskbarRect.Right - taskbar.AppListRect.Right - Convert.ToInt32(2 * taskbar.ScaleFactor);
 
+                // Add a larger buffer to prevent clipping of the last icon (user reported ~2 icons cutoff)
+                centredDistanceFromEdge -= Convert.ToInt32(100 * taskbar.ScaleFactor);
+
                 // If on Windows 10, add an extra 20 logical pixels for the grabhandle
                 if (!settings.IsWindows11)
                 {
@@ -262,17 +265,17 @@ namespace RoundedTB
                 {
                     int appListLeft = taskbar.AppListRect.Left - taskbar.TaskbarRect.Left;
                     int appListRight = taskbar.AppListRect.Right - taskbar.TaskbarRect.Left;
-                    
+
                     int leftMargin = Convert.ToInt32(settings.DynamicAppListLayout.MarginLeft * taskbar.ScaleFactor);
                     int rightMargin = Convert.ToInt32(settings.DynamicAppListLayout.MarginRight * taskbar.ScaleFactor);
-                    
-                    int left = Math.Max(0, appListLeft - leftMargin);
-                    int right = Math.Min(taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left, appListRight + rightMargin);
-                    
+
+                    int left = Math.Max(0, appListLeft - leftMargin - Convert.ToInt32(50 * taskbar.ScaleFactor));
+                    int right = Math.Min(taskbar.TaskbarRect.Right - taskbar.TaskbarRect.Left, appListRight + rightMargin + Convert.ToInt32(50 * taskbar.ScaleFactor));
+
                     int top = centredEffectiveRegion.Top;
                     int bottom = top + centredEffectiveRegion.Height;
                     int radius = centredEffectiveRegion.CornerRadius;
-                    
+
                     mainRegion = LocalPInvoke.CreateRoundRectRgn(
                         left,
                         top,

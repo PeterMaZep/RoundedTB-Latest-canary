@@ -18,18 +18,146 @@
         >
     <!--169, 393-->
     <Grid x:Name="MainGrid" Margin="0,0,0,0" d:Margin="0,-16,0,0">
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" MinHeight="30" />
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <wpfui:TitleBar x:Name="mainTitleBar" Grid.Row="0" UseNotifyIcon="True" NotifyIconImage="pack://application:,,,/res/traydark.ico" NotifyIconTooltip="RoundedTB" ApplicationNavigation="True" Margin="0,0,0,0" Title="RoundedTB - Configuration" Icon="pack://application:,,,/RoundedTBCanary.ico" Height="51" ShowMaximize="False">
+        <wpfui:TitleBar x:Name="mainTitleBar" Grid.Row="0" UseNotifyIcon="False" NotifyIconImage="pack://application:,,,/res/traydark.ico" NotifyIconTooltip="RoundedTB" ApplicationNavigation="True" Margin="0,0,0,0" Title="RoundedTB - Configuration" Icon="pack://application:,,,/RoundedTBCanary.ico" Height="51" ShowMaximize="False">
             <wpfui:TitleBar.NotifyIconMenu>
-                <ContextMenu MouseEnter="ContextMenu_MouseEnter">
-                    <CheckBox x:Name ="StartupCheckBox" Content="Run at startup" Click="Startup_Clicked"/>
-                    <MenuItem x:Name="DebugMenuItem" Header="Debug" Visibility ="Hidden" Click="DebugMenuItem_Click" Height="0"/>
-                    <MenuItem x:Name ="ShowMenuItem" Header="Show RoundedTB" Click="ShowMenuItem_Click"/>
-                    <MenuItem x:Name ="CloseMenuItem" Header="Close RoundedTB" Click="CloseMenuItem_Click"/>
+                <ContextMenu x:Name="TrayContextMenu" MouseEnter="ContextMenu_MouseEnter">
+                    <!-- Dark Fluent UI Styling for ContextMenu -->
+                    <ContextMenu.Style>
+                        <Style TargetType="ContextMenu">
+                            <Setter Property="Background" Value="#E6202020"/>
+                            <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Padding" Value="4"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ContextMenu">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="8"
+                                                Padding="{TemplateBinding Padding}">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                            </Border.Effect>
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ContextMenu.Style>
+
+                    <ContextMenu.Resources>
+                        <!-- Dark Fluent CheckBox Style -->
+                        <Style x:Key="FluentDarkCheckBox" TargetType="CheckBox">
+                            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="CheckBox">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border x:Name="CheckBorder"
+                                                        Width="18" Height="18"
+                                                        CornerRadius="4"
+                                                        BorderThickness="1"
+                                                        BorderBrush="#60FFFFFF"
+                                                        Background="#30FFFFFF">
+                                                    <TextBlock x:Name="CheckMark"
+                                                               Text="✓"
+                                                               FontSize="12"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="White"
+                                                               Visibility="Collapsed"/>
+                                                </Border>
+                                                <TextBlock Text="{TemplateBinding Content}"
+                                                           Margin="10,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="#FFFFFFFF"
+                                                           FontSize="12"/>
+                                            </StackPanel>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="CheckBorder" Property="Background" Value="#0078D4"/>
+                                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="#0078D4"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#20FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter Property="Background" Value="#30FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+
+                        <!-- Dark Fluent MenuItem Style -->
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Padding" Value="10,8"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="MenuItem">
+                                        <Border x:Name="RootBorder"
+                                                Background="{TemplateBinding Background}"
+                                                Padding="{TemplateBinding Padding}"
+                                                CornerRadius="4">
+                                            <ContentPresenter ContentSource="Header"
+                                                              VerticalAlignment="Center"
+                                                              TextBlock.Foreground="#FFFFFFFF"
+                                                              TextBlock.FontSize="12"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="RootBorder" Property="Background" Value="#20FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="RootBorder" Property="Background" Value="#30FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+
+                        <!-- Dark Fluent Separator Style -->
+                        <Style TargetType="Separator">
+                            <Setter Property="Height" Value="1"/>
+                            <Setter Property="Margin" Value="4,4"/>
+                            <Setter Property="Background" Value="#30FFFFFF"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Separator">
+                                        <Border Background="{TemplateBinding Background}"
+                                                Height="{TemplateBinding Height}"
+                                                Margin="{TemplateBinding Margin}"/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ContextMenu.Resources>
+
+                    <CheckBox x:Name="StartupCheckBox" Content="Run at startup" Click="Startup_Clicked" Style="{StaticResource FluentDarkCheckBox}"/>
+                    <Separator/>
+                    <MenuItem x:Name="ShowMenuItem" Header="Show RoundedTB" Click="ShowMenuItem_Click"/>
+                    <MenuItem x:Name="CloseMenuItem" Header="Close RoundedTB" Click="CloseMenuItem_Click"/>
                 </ContextMenu>
             </wpfui:TitleBar.NotifyIconMenu>
         </wpfui:TitleBar>
@@ -41,9 +169,6 @@
                 <TextBox x:Name="cornerRadiusInput" TextWrapping="NoWrap" Text="" VerticalAlignment="Top" HorizontalAlignment="Left" Width="94" Margin="108,19,0,0" LostFocus="cornerRadiusInput_LostFocus"/>
                 <Slider x:Name="cornerRadiusSlider" Height="10" VerticalAlignment="Top" HorizontalAlignment="Left" Width="84" LargeChange="0" SmallChange="1" Focusable="False" Maximum="48" Orientation="Horizontal" Thumb.DragCompleted="cornerRadiusSlider_DragCompleted" ValueChanged="cornerRadiusSlider_ValueChanged" Margin="0,25,0,0"/>
             </Grid>
-
-
-
 
             <wpfui:Button x:Name="aboutButton" Appearance="Secondary" Margin="0,0,10,47" VerticalAlignment="Bottom" Content="Help" Click="aboutButton_Click" FontWeight="Normal" HorizontalAlignment="Right" Width="133" Height="31"/>
             <wpfui:Button x:Name="applyButton" Margin="0,0,10,10" VerticalAlignment="Bottom" Content="Apply" Click="ApplyButton_Click" FontWeight="Normal" HorizontalAlignment="Right" Width="133" Height="32"/>

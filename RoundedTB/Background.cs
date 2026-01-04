@@ -11,13 +11,47 @@ namespace RoundedTB
     public class Background
     {
         // Just have a reference point for the Dispatcher
-        public MainWindow mw;
+        private MainWindow _mw;
+        public MainWindow mw
+        {
+            get
+            {
+                if (_mw == null)
+                {
+                    // Try to get the MainWindow when first accessed
+                    var mainWindow = Application.Current.MainWindow as MainWindow;
+                    if (mainWindow != null)
+                    {
+                        _mw = mainWindow;
+                    }
+                    else
+                    {
+                        // If MainWindow is null, search for the MainWindow among all windows
+                        foreach (Window window in Application.Current.Windows)
+                        {
+                            if (window is MainWindow mainWnd)
+                            {
+                                _mw = mainWnd;
+                                break;
+                            }
+                        }
+                    }
+                }
+                return _mw;
+            }
+        }
+
         bool redrawOverride = false;
         int infrequentCount = 0;
 
         public Background()
         {
-            mw = (MainWindow)Application.Current.MainWindow;
+            // Reference lookup is now deferred until mw property is accessed
+        }
+
+        public void SetMainWindow(MainWindow mainWindow)
+        {
+            _mw = mainWindow;
         }
 
 
@@ -132,7 +166,7 @@ namespace RoundedTB
                                 LocalPInvoke.RECT currentTrayRect = taskbars[current].TrayRect;
                                 LocalPInvoke.RECT currentWidgetsRect = taskbars[current].TaskbarRect;
                                 currentWidgetsRect.Right = Convert.ToInt32(currentWidgetsRect.Right - (currentWidgetsRect.Right - currentWidgetsRect.Left) + (168 * taskbars[current].ScaleFactor));
-                                
+
                                 if (currentTrayRect.Left != 0)
                                 {
                                     LocalPInvoke.GetCursorPos(out LocalPInvoke.POINT msPt);
